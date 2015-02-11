@@ -1,16 +1,25 @@
 #ifdef linux
 /* For pread()/pwrite() */
 #define _XOPEN_SOURCE 500
-#endif
+
 //FOR LINUX ONLY
 #include <linux/stat.h> 
 #include <linux/kdev_t.h>
+#include <sys/statfs.h>
+#endif
 
 #include <ruby.h>
 #include "ruby-compat.h"
 #include <fuse.h>
 #include <errno.h>
-#include <sys/statfs.h>
+
+
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <unistd.h>
+#endif
 
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
@@ -241,9 +250,13 @@ static int rf_mknod(const char *path, mode_t mode,dev_t dev)
   int minor;
 
   init_context_path_args(args,ctx,path);
- 
+#ifdef __FreeBSD__
+  major = major(dev);
+  minor = minor(dev);
+#else
   major = MAJOR(dev);
   minor = MINOR(dev);
+#endif
 
   args[3]=INT2FIX(mode);
   args[4]=INT2FIX(major);
